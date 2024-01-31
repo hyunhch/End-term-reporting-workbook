@@ -1,0 +1,73 @@
+﻿Option Explicit
+
+Private Sub Workbook_Open()
+
+    Dim RosterSheet As Worksheet
+    Dim ActivitiesSheet As Worksheet
+    Dim ReportSheet As Worksheet
+    
+    Set RosterSheet = Worksheets("Roster Page")
+    Set ActivitiesSheet = Worksheets("Activities Page")
+    Set ReportSheet = Worksheets("Report Page")
+    
+    RosterSheet.Protect , userinterfaceonly:=True, AllowSorting:=True, AllowFiltering:=True
+    ActivitiesSheet.Protect , userinterfaceonly:=True, AllowSorting:=True, AllowFiltering:=True
+    ReportSheet.Protect , userinterfaceonly:=True, AllowSorting:=True, AllowFiltering:=True, AllowFormattingColumns:=True
+
+    'Lock/Unlock areas
+    RosterSheet.Cells.Locked = False
+    RosterSheet.Range("A1:A5").EntireRow.Locked = True
+    
+    ActivitiesSheet.Cells.Locked = False
+    ActivitiesSheet.Range("A1:A5").EntireRow.Locked = True
+    ActivitiesSheet.Range("B1").Locked = False 'Name of practice
+    ActivitiesSheet.Range("B3").Locked = False 'Practice description
+    
+    ReportSheet.Cells.Locked = True 'Lock the entire page
+
+End Sub
+
+Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
+
+'Filling in the Logic Model category when a practice is selected
+    If ActiveSheet.Name = "Activities Page" Then
+        Dim Fill As String
+        Dim PracticeRow As Variant
+        Dim ActArray As Variant
+      
+        Set ActArray = Worksheets("Ref Tables").ListObjects("ActivitiesTable") 'Grab activity table
+        
+        If Target.Address = "$B$1" Then 'If you change the dropdown, fill the row below
+            Fill = Range("B1").Value 'Grab the contents of the dropdown selection
+            'Debug.Print (Fill)
+            Set PracticeRow = ActArray.Range.Find(Fill)
+            If Not PracticeRow Is Nothing Then
+                PracticeRow = ActArray.Range.Find(Fill).Row
+                Range("B2").Value = ActArray.Range(PracticeRow, 1).Value 'Fill the next row
+                Range("B2").WrapText = False
+                Call SaveDescription("load")
+            Else
+                Range("B2").Value = "" 'Clear if empty
+            End If
+        End If
+    End If
+
+End Sub
+
+Private Sub Workbook_SheetBeforeDoubleClick(ByVal Sh As Object, ByVal Target As Range, Cancel As Boolean)
+'Marlett checkboxes. Using these instead of actual checkboxes due to issues with sorting
+'Checks that the font instead of range. Should allow for dynamic table size
+
+    If Target.Cells.Count > 1 Then
+        Exit Sub
+    End If
+    
+    Cancel = True
+    If Target.Font.Name = "Marlett" Then
+        If Target.Value = "" Then
+            Target.Value = "a"
+        Else
+            Target.Value = ""
+        End If
+    End If
+End Sub
